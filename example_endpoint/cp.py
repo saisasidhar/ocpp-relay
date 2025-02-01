@@ -39,7 +39,7 @@ class ChargePoint(cp):
 
 async def main():
     async with websockets.connect(
-        "ws://localhost:9000/CP00000007", subprotocols=["ocpp2.0.1"]
+        "ws://localhost:8500/CP00000007", subprotocols=["ocpp2.0.1"]
     ) as ws:
         cp = ChargePoint("CP00000007", ws)
         asyncio.create_task(cp.start())
