@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "ocpp-relay"
+version = "0.1.0"
+description = "OCPP-J relay between a CP and CSMS"
+authors = ["Sai Sasidhar Maddali"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+ocpp = "1.0.0"
+websockets = "13.1"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.1.0"
+black = "^25.1.0"
+isort = "^6.0.0"
+
+[tool.isort]
+profile = "black"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
