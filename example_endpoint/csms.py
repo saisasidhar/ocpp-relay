@@ -5,8 +5,8 @@ from datetime import datetime
 import websockets
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
-from ocpp.v201 import call_result
-from ocpp.v201.enums import RegistrationStatusType
+from ocpp.v201 import call, call_result
+from ocpp.v201.enums import MessageTriggerType, RegistrationStatusType
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,9 +20,20 @@ logger.addHandler(console_logger)
 
 
 class ChargePoint(cp):
+    async def _send_trigger_message(self):
+        await asyncio.sleep(0.5)
+        logger.info(
+            f"{self.id}: Sending TriggerMessage requesting for StatusNotification"
+        )
+        trigger_request = call.TriggerMessage(
+            requested_message=MessageTriggerType.status_notification
+        )
+        await self.call(trigger_request)
+
     @on("Heartbeat")
     async def on_heartbeat(self, **kwargs):
         logger.info(f"{self.id}: Received Heartbeat.")
+        asyncio.create_task(self._send_trigger_message())
         return call_result.Heartbeat(
             current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
@@ -35,6 +46,11 @@ class ChargePoint(cp):
             interval=60,
             status=RegistrationStatusType.accepted,
         )
+
+    @on("StatusNotification")
+    async def on_status_notification(self, **kwargs):
+        logger.info(f"{self.id}: Received StatusNotification")
+        return call_result.StatusNotification()
 
 
 async def on_connect(websocket, path):
@@ -63,7 +79,7 @@ async def main():
     server = await websockets.serve(
         on_connect, "0.0.0.0", 9000, subprotocols=["ocpp2.0.1"]
     )
-    logger.info("WebSocket Server Started")
+    logger.info("CSMS Started on port 9000")
     await server.wait_closed()
 
 
