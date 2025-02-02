@@ -62,6 +62,11 @@ class ChargePoint(cp):
             asyncio.create_task(self._send_status_notification())
         return call_result.TriggerMessage(status="Accepted")
 
+    @on("DataTransfer")
+    async def on_data_transfer(self, **kwargs):
+        logger.info("Received DataTransfer")
+        return call_result.DataTransfer(status="Accepted")
+
 
 async def main():
     async with websockets.connect(

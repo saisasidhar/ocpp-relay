@@ -52,6 +52,11 @@ class ChargePoint(cp):
         logger.info(f"{self.id}: Received StatusNotification")
         return call_result.StatusNotification()
 
+    @on("DataTransfer")
+    async def on_data_transfer(self, **kwargs):
+        logger.info(f"{self.id}: Received DataTransfer")
+        return call_result.DataTransfer(status="Accepted")
+
 
 async def on_connect(websocket, path):
     try:
