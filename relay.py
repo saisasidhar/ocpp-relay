@@ -25,17 +25,19 @@ class WebSocketRelay:
         self.internal_queue = asyncio.Queue()
         self.logger = setup_logger()
         self.csms_ws, self.cp_ws = None, None
+        self.injected_message_ids = []
 
     async def _relay(self, source_ws, target_ws, source_name, target_name):
         while True:
             try:
                 message = await source_ws.recv()
-                self.internal_queue.put_nowait(message)
-                await target_ws.send(message)
                 json_message = json.loads(message)
-                self.logger.info(
-                    f"Relayed message from {source_name} to {target_name} ({json_message[1]})"
-                )
+                self.internal_queue.put_nowait(message)
+                if json_message[1] not in self.injected_message_ids:
+                    await target_ws.send(message)
+                    self.logger.info(
+                        f"Relayed message from {source_name} to {target_name} ({json_message[1]})"
+                    )
             except websockets.exceptions.ConnectionClosed:
                 self.logger.info(f"{source_name} connection closed.")
                 break
@@ -57,18 +59,19 @@ class WebSocketRelay:
         elif "inject" in path:
             _, direction = path.split("/")
             request = await ws.recv()
+            json_request = json.loads(request)
             if direction == "csms-cp":
                 self.logger.info(f"Injecting CSMS → CP: {request}")
+                self.injected_message_ids.append(json_request[1])
                 await self.cp_ws.send(request)
                 self.internal_queue.put_nowait(request)
-                response = await self.cp_ws.recv()
-                self.internal_queue.put_nowait(response)
+                # response is handled by the _relay() method, avoiding two consumers/recv() of the websocket
             elif direction == "cp-csms":
                 self.logger.info(f"Injecting CP → CSMS: {request}")
+                self.injected_message_ids.append(json_request[1])
                 await self.csms_ws.send(request)
                 self.internal_queue.put_nowait(request)
-                response = await self.csms_ws.recv()
-                self.internal_queue.put_nowait(response)
+                # response is handled by the _relay() method, avoiding two consumers/recv() of the websocket
 
         else:
             charge_point_id = path.strip("/")
