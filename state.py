@@ -26,6 +26,7 @@ class AppState:
     charge_point_id: Optional[str] = ""
     ws_subprotocol: Optional[str] = ""
     events = collections.OrderedDict()
+    injected_message_ids = []
 
 
 def introduce_statefulness():

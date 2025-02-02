@@ -80,6 +80,8 @@ def ocpp_event_viewer(selected_event_id):
         st.write(
             f"**Message Direction**: {get_ocpp_message_direction(selected_event.message_name)}"
         )
+        if selected_event_id in st.session_state.app_state.injected_message_ids:
+            st.write("💉 **Injected Message** 💉")
         st.divider()
         left, right = st.columns(2)
 
@@ -111,7 +113,10 @@ def show_events_component():
             ts = datetime.utcfromtimestamp(event.timestamp).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
-            txt = f"{ts}Z - {event.message_name} - 🔍"
+            if id in st.session_state.app_state.injected_message_ids:
+                txt = f"💉 - {ts}Z - {event.message_name} - 🔍"
+            else:
+                txt = f"✉️ - {ts}Z - {event.message_name} - 🔍"
             if st.sidebar.button(txt, key=str(event.timestamp) + id):
                 ocpp_event_viewer(id)
     else:
