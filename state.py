@@ -19,7 +19,9 @@ class AppState:
     """..."""
 
     development: bool = False
-    csms_url: Optional[str] = None
+    csms_url: str = ""
+    csms_id: str = ""
+    csms_pass: str = ""
     relay_configured: bool = False
     relay_connected: bool = False
     relay_url: str = "ws://localhost:8500"

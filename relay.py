@@ -20,12 +20,12 @@ def setup_logger():
 
 
 class WebSocketRelay:
-    def __init__(self, csms_url="ws://localhost:9000"):
-        self.csms_url = csms_url
+    def __init__(self):
         self.internal_queue = asyncio.Queue()
-        self.logger = setup_logger()
-        self.csms_ws, self.cp_ws = None, None
         self.injected_message_ids = []
+        self.logger = setup_logger()
+        self.csms_url, self.csms_id, self.csms_pass = None, None, None
+        self.csms_ws, self.cp_ws = None, None
 
     async def _relay(self, source_ws, target_ws, source_name, target_name):
         while True:
@@ -47,8 +47,13 @@ class WebSocketRelay:
         self.logger.info(f"WebSocket OnConnect for path: {path}")
 
         if "streamlit" in path:
-            _, csms_url_b64 = path.split("/")
-            self.csms_url = base64.b64decode(csms_url_b64).decode("ascii")
+            _, csms_info_b64 = path.split("/")
+            csms_info = json.loads(base64.b64decode(csms_info_b64).decode("ascii"))
+            self.csms_url, self.csms_id, self.csms_pass = (
+                csms_info["url"],
+                csms_info["id"],
+                csms_info["pass"],
+            )
             self.logger.info(
                 f"Relay will connect to CSMS at: {self.csms_url} when it receives a connection from ChargePoint"
             )
