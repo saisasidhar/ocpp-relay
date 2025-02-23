@@ -26,7 +26,10 @@ def show_message_injection_component():
                 auto_update=True,
             )
 
-        if st.form_submit_button("Inject OCPP Message"):
+        if st.form_submit_button(
+            "Inject OCPP Message",
+            disabled=not st.session_state.app_state.charge_point_id,
+        ):
             if not direction:
                 st.error("Select a message direction before injecting a message")
             else:

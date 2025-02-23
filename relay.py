@@ -2,8 +2,12 @@ import asyncio
 import base64
 import json
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Literal
 
 import websockets
+from dataclasses_json import dataclass_json
 
 
 def setup_logger():
@@ -19,6 +23,22 @@ def setup_logger():
     return logger
 
 
+def basic_auth_header(username, password):
+    user_pass = f"{username}:{password}"
+    basic_credentials = b64encode(user_pass.encode()).decode()
+    return ("Authorization", f"Basic {basic_credentials}")
+
+
+@dataclass_json
+@dataclass
+class MetaInformation:
+    event: Literal["Connection", "Disconnection"]
+    payload: dict = None
+    timestamp: str = field(
+        default_factory=lambda: datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+
+
 class WebSocketRelay:
     def __init__(self):
         self.internal_queue = asyncio.Queue()
@@ -26,6 +46,7 @@ class WebSocketRelay:
         self.logger = setup_logger()
         self.csms_url, self.csms_id, self.csms_pass = None, None, None
         self.csms_ws, self.cp_ws = None, None
+        self.cp_id, cp_ws_subp = None, None
 
     async def _relay(self, source_ws, target_ws, source_name, target_name):
         while True:
@@ -40,6 +61,9 @@ class WebSocketRelay:
                     )
             except websockets.exceptions.ConnectionClosed:
                 self.logger.info(f"{source_name} connection closed.")
+                self.internal_queue.put_nowait(
+                    str(MetaInformation(event="Disconnection").to_json())
+                )
                 break
 
     async def on_connect(self, ws, path):
@@ -93,14 +117,23 @@ class WebSocketRelay:
                 f"Received a new connection from a ChargePoint. {charge_point_id=}"
             )
             self.logger.info(f"Connecting to CSMS at {self.csms_url}/{charge_point_id}")
-            data = {
-                "charge_point_id": charge_point_id,
-                "ws_subprotocol": ws_subprotocol,
-            }
-            self.internal_queue.put_nowait(json.dumps(data))
+            connection_meta_info = MetaInformation(
+                event="Connection",
+                payload={
+                    "charge_point_id": charge_point_id,
+                    "ws_subprotocol": ws_subprotocol,
+                },
+            )
+            self.internal_queue.put_nowait(str(connection_meta_info.to_json()))
 
             async with websockets.connect(
-                f"{self.csms_url}/{charge_point_id}", subprotocols=[ws_subprotocol]
+                f"{self.csms_url}/{charge_point_id}",
+                subprotocols=[ws_subprotocol],
+                extra_headers=(
+                    [basic_auth_header(self.csms_id, self.csms_pass)]
+                    if all([self.csms_id, self.csms_pass])
+                    else []
+                ),
             ) as csms_ws:
                 self.csms_ws, self.cp_ws = csms_ws, cp_ws
                 await asyncio.gather(

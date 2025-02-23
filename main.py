@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import streamlit as st
 
 from components.base import display_base_ui
@@ -19,4 +22,9 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s - [%(levelname)-4.4s] - [%(threadName)-9.9s] - [%(name)-20.20s] - %(message)s",
+        level=logging.INFO,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
     main()

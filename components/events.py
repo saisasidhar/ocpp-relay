@@ -106,8 +106,7 @@ def show_events_component():
     st.sidebar.header("OCPP Events")
 
     if st.sidebar.button("Refresh", icon=":material/autorenew:"):
-        if st.session_state.app_state.development:
-            load_example_events()
+        pass
     if st.session_state.app_state.events:
         for id, event in reversed(st.session_state.app_state.events.items()):
             ts = datetime.utcfromtimestamp(event.timestamp).strftime(
