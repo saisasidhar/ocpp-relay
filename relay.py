@@ -25,7 +25,7 @@ def setup_logger():
 
 def basic_auth_header(username, password):
     user_pass = f"{username}:{password}"
-    basic_credentials = b64encode(user_pass.encode()).decode()
+    basic_credentials = base64.b64encode(user_pass.encode()).decode()
     return ("Authorization", f"Basic {basic_credentials}")
 
 
