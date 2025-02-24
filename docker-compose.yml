@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8500:8500"
+      - "8501:8501"
+    environment:
+      - POETRY_VIRTUALENVS_CREATE=false  # Ensures Poetry installs packages globally
+      - STREAMLIT_SERVER_PORT=8501
+    restart: unless-stopped
