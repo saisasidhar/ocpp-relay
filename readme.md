@@ -25,6 +25,9 @@ messages (requests) in either direction, and it's response is not relayed back t
 ~~~
 
 **Option 2: Python (Suitable if connecting to CSMS server running on a specific host and port that is not accessible to docker)**
+
+Make sure a redis server in running prior on default port 6379
+
 ~~~shell
 ➜ poetry install # to install all dependencies of the project
 # In Terminal 1:
